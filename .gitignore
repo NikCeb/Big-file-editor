@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# PyInstaller output
+build/
+dist/
+*.manifest
+
+# Local diagnostics and generated screenshots
+tests/local/screenshots/
+dbg_*.txt
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

@@ -1,18 +1,13 @@
-"""
-File: main.py
-Author: Nikolai Ceballos
-Date: 2025-03-20
-Description: Calls the GUI.
-"""
+"""Launcher. Run with: python main.py"""
 
-import tkinter as tk
-from app_gui import FileProcessorGUI
+from __future__ import annotations
 
-def main():
-    """Application entry point."""
-    root = tk.Tk()
-    app = FileProcessorGUI(root)
-    root.mainloop()
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from gencompanion.app import main  # noqa: E402
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

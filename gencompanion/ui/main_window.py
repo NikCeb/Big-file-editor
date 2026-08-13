@@ -15,13 +15,22 @@ from PySide6.QtWidgets import (
 from ..domain.detect import detect_installs
 from ..domain.settings import Settings
 from .screens.archive import ArchiveScreen
+from .screens.backups import BackupsScreen
+from .screens.display import DisplayScreen
 from .screens.launch import LaunchScreen
 from .screens.saves import SavesScreen
 from .screens.welcome import WelcomeScreen
 from .tokens import DARK, LIGHT, stylesheet
 
 _RAIL_WIDTH = 188
-_SCREENS = ("Overview", "Launch options", "Saves", "Archive")
+_SCREENS = (
+    "Overview",
+    "Display",
+    "Launch options",
+    "Saves",
+    "Archive",
+    "Backups",
+)
 
 
 class MainWindow(QMainWindow):
@@ -82,9 +91,11 @@ class MainWindow(QMainWindow):
         welcome.paths_changed.connect(self._build_screens)
 
         self.stack.addWidget(welcome)
+        self.stack.addWidget(DisplayScreen(primary))
         self.stack.addWidget(LaunchScreen(primary))
         self.stack.addWidget(SavesScreen(installs))
         self.stack.addWidget(ArchiveScreen())
+        self.stack.addWidget(BackupsScreen())
 
         if 0 <= current_row < self.stack.count():
             self.stack.setCurrentIndex(current_row)

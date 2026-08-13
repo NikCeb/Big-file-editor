@@ -53,6 +53,8 @@ Settings and backups live in:
 
 Full walkthrough: **[docs/TUTORIAL.md](docs/TUTORIAL.md)**
 
+Why it works the way it does: **[docs/FINDINGS.md](docs/FINDINGS.md)**
+
 ---
 
 ## Display

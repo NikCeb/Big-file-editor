@@ -1,11 +1,11 @@
 # Generals Companion
 
-A quality-of-life tool and archive editor for **Command &amp; Conquer: Generals** and
+A quality-of-life tool and archive editor for **Command & Conquer: Generals** and
 **Zero Hour**.
 
 The game is from 2003. It assumes a 4:3 monitor, a single-core CPU, and a machine
 that no longer exists. This tool fixes those assumptions by editing the config
-files the game already reads &mdash; and backs up everything before it does.
+files the game already reads — and backs up everything before it does.
 
 It never patches an executable. It never writes to a save file. It changes
 nothing that affects another player.
@@ -28,13 +28,13 @@ nothing that affects another player.
 ## Requirements
 
 - Windows 10 or 11
-- Command &amp; Conquer: Generals or Zero Hour installed (or just its save folder)
+- Command & Conquer: Generals or Zero Hour installed (or just its save folder)
 
 No Python install needed. The release is a single `.exe`.
 
 ## Install
 
-Download `GeneralsCompanion.exe` and run it. That is the whole install &mdash; it is
+Download `GeneralsCompanion.exe` and run it. That is the whole install — it is
 self-contained and writes nothing until you press Apply on a screen.
 
 Settings and backups live in:
@@ -60,8 +60,8 @@ Why it works the way it does: **[docs/FINDINGS.md](docs/FINDINGS.md)**
 ## Display
 
 Reads and writes `Options.ini`. The in-game menu offers a short list of 4:3 modes,
-but the config file accepts anything &mdash; which is how a 2003 game ends up running
-at 2560&times;1440.
+but the config file accepts anything — which is how a 2003 game ends up running
+at 2560×1440.
 
 ![Display screen](docs/images/display.png)
 
@@ -111,7 +111,7 @@ another machine.
 
 ## Archive
 
-Opens `.big` archives &mdash; the format Generals uses for its assets. Browse entries,
+Opens `.big` archives — the format Generals uses for its assets. Browse entries,
 filter by name or extension, and extract single files or whole selections.
 
 ![Archive screen](docs/images/archive.png)
@@ -126,14 +126,14 @@ written back out.
 Every write is backed up first, and recorded in a journal.
 
 The journal matters more than the backup folder. On restore, scanning a directory
-cannot tell a file *this tool* changed from one *you* hand-edited &mdash; and restoring
+cannot tell a file *this tool* changed from one *you* hand-edited — and restoring
 over the latter would destroy your work. So only journalled files are ever touched.
 
 **Unrecorded means untouched.**
 
 - **Restore selected** puts one file back to a chosen point.
 - **Restore everything to stock** returns every file to how it was before this tool
-  first ran &mdash; not the previous change, the original state.
+  first ran — not the previous change, the original state.
 
 Backups are capped at 50, and the first-run baseline is never evicted.
 
@@ -175,5 +175,5 @@ Output lands in `dist\GeneralsCompanion.exe`.
 
 ## Licence and attribution
 
-Command &amp; Conquer: Generals is a trademark of Electronic Arts. This is an
+Command & Conquer: Generals is a trademark of Electronic Arts. This is an
 unofficial community tool and ships no game assets.

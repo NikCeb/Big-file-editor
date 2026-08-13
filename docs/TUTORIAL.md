@@ -26,8 +26,8 @@ Open `GeneralsCompanion.exe`. The Overview screen shows what it found.
 
 The tool looks for two things per edition:
 
-- **Game folder** &mdash; where `generals.exe` and the `.big` archives live
-- **Save and config folder** &mdash; usually under Documents, holding `Options.ini` and your saves
+- **Game folder** — where `generals.exe` and the `.big` archives live
+- **Save and config folder** — usually under Documents, holding `Options.ini` and your saves
 
 These are separate because they usually are on disk. You can have one without the
 other, and the tool still works with whichever it finds.
@@ -35,7 +35,7 @@ other, and the tool still works with whichever it finds.
 ### If a path says "not found"
 
 Press **Locate...** and pick the folder. The tool checks the folder looks right and
-tells you what it expected if it does not &mdash; but you can override that and use it
+tells you what it expected if it does not — but you can override that and use it
 anyway.
 
 Your choice is remembered, and beats auto-detection from then on. Press **Reset** to
@@ -65,7 +65,7 @@ The status line confirms what was written and reminds you a backup was taken.
 ### The detail settings
 
 Everything under **Detail** comes from the same file. Settings showing
-**(game default)** are not in your config at all &mdash; the game is using its built-in
+**(game default)** are not in your config at all — the game is using its built-in
 default, and the tool will only write a value if you deliberately change one.
 
 Leave them alone unless you have a reason. They are there for when you are chasing
@@ -75,7 +75,7 @@ performance on old hardware.
 
 ## 3. Faster launches
 
-Command-line switches. These change **nothing on disk** &mdash; they only apply to the
+Command-line switches. These change **nothing on disk** — they only apply to the
 launch you start from here, so they are undone by launching the game normally.
 
 ![Launch options screen](images/launch-options.png)
@@ -96,14 +96,14 @@ The preview line at the bottom always shows exactly what will be passed.
 
 The **Resolution** dropdown on this screen passes `-xres` and `-yres` rather than
 editing `Options.ini`. Use this if you want to try a resolution without committing
-to it &mdash; launch without the switch and you are back to normal.
+to it — launch without the switch and you are back to normal.
 
 ---
 
 ## 4. About the FPS cap
 
 Generals runs at 30 FPS. There is a switch that removes that limit, and it is on
-the Launch options screen &mdash; but it does not do what most people expect.
+the Launch options screen — but it does not do what most people expect.
 
 **The engine ties game speed to framerate.** Removing the cap does not give you a
 smoother game at the same speed. It gives you a game running at roughly **double
@@ -131,7 +131,7 @@ The Saves screen lists every save it can find, newest first.
 | **Size** | Full saves are megabytes; progress markers are a few hundred bytes |
 
 **Progress** entries are small campaign-progress markers rather than full game
-states &mdash; that is why some rows are 200 bytes and others are 6 MB. Both are
+states — that is why some rows are 200 bytes and others are 6 MB. Both are
 normal.
 
 **This screen is read-only.** The tool never writes to a save file. It is here so
@@ -149,7 +149,7 @@ Use **Browse another folder...** to inspect saves copied from another machine.
 
 1. Press **Open archive** and pick a `.big` file from your game folder.
    `INI.big` is a good first one.
-2. The entry list appears. Use the filter box to narrow by name or extension &mdash;
+2. The entry list appears. Use the filter box to narrow by name or extension —
    typing `.ini` shows only INI files.
 3. Select one or more rows and press **Extract selected**, then pick a destination.
 
@@ -170,8 +170,8 @@ is marked read-only so the damage cannot be written back out.
 
 Every write is backed up first. The Backups screen is where you undo things.
 
-- **Restore selected** &mdash; picks one backup and puts that file back to that point.
-- **Restore everything to stock** &mdash; returns every file the tool has touched to how
+- **Restore selected** — picks one backup and puts that file back to that point.
+- **Restore everything to stock** — returns every file the tool has touched to how
   it was *before this tool ever ran*. Not the previous change; the original state.
 
 Only files this tool changed are ever affected. If you hand-edited a config file
@@ -194,11 +194,11 @@ Check the game is fully closed before applying, then relaunch. If the game is
 running when you press Apply, it may overwrite `Options.ini` on exit.
 
 **The game runs too fast.**
-You have `-nofpslimit` enabled. Untick it &mdash; see
+You have `-nofpslimit` enabled. Untick it — see
 [section 4](#4-about-the-fps-cap).
 
 **I want everything back to normal.**
-Backups screen &rarr; **Restore everything to stock**.
+Backups screen → **Restore everything to stock**.
 
 **Where is my data stored?**
 `%LOCALAPPDATA%\GeneralsCompanion\` holds settings, backups and the change journal.

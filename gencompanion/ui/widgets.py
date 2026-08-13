@@ -21,6 +21,10 @@ def label(text: str, role: str = "") -> QLabel:
     if role:
         widget.setProperty("role", role)
     widget.setWordWrap(True)
+    # Labels must not paint their own background, or they show as a dark bar
+    # against the card they sit on.
+    widget.setAttribute(Qt.WA_TranslucentBackground, True)
+    widget.setAutoFillBackground(False)
     return widget
 
 
@@ -33,7 +37,7 @@ def subtitle(text: str) -> QLabel:
 
 
 def section(text: str) -> QLabel:
-    return label(text, "section")
+    return label(text.upper(), "section")
 
 
 class Banner(QFrame):
@@ -41,15 +45,25 @@ class Banner(QFrame):
 
     def __init__(self, text: str, kind: str = "info") -> None:
         super().__init__()
+        self._kind = kind
         self.setProperty("role", f"banner-{kind}")
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(Space.md, Space.md, Space.md, Space.md)
+        layout.setContentsMargins(Space.lg, Space.md, Space.lg, Space.md)
         self._label = label(text)
         self._label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self._label)
 
     def set_text(self, text: str) -> None:
         self._label.setText(text)
+
+    def set_kind(self, kind: str) -> None:
+        """Change severity and force a restyle, which Qt does not do alone."""
+        if kind == self._kind:
+            return
+        self._kind = kind
+        self.setProperty("role", f"banner-{kind}")
+        self.style().unpolish(self)
+        self.style().polish(self)
 
 
 class Card(QFrame):
@@ -59,7 +73,7 @@ class Card(QFrame):
         super().__init__()
         self.setProperty("role", "card")
         self.body = QVBoxLayout(self)
-        self.body.setContentsMargins(Space.lg, Space.lg, Space.lg, Space.lg)
+        self.body.setContentsMargins(Space.xl, Space.lg, Space.xl, Space.lg)
         self.body.setSpacing(spacing)
 
     def add(self, widget: QWidget) -> QWidget:
@@ -67,11 +81,48 @@ class Card(QFrame):
         return widget
 
 
+class EmptyState(QFrame):
+    """Explains why a view is empty and what to do about it.
+
+    A bare table with headers and no rows reads as a fault. This gives the
+    space a purpose instead.
+    """
+
+    def __init__(self, heading: str, body: str = "") -> None:
+        super().__init__()
+        self.setProperty("role", "empty")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(Space.xl, Space.xxl, Space.xl, Space.xxl)
+        layout.setSpacing(Space.sm)
+        layout.setAlignment(Qt.AlignCenter)
+        # Cap the height so the panel stays proportional to its text rather
+        # than stretching to fill the page, which reads as a layout fault.
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setFixedHeight(200)
+
+        heading_label = label(heading, "empty-title")
+        heading_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(heading_label)
+
+        if body:
+            body_label = label(body, "empty-body")
+            body_label.setAlignment(Qt.AlignCenter)
+            body_label.setMaximumWidth(460)
+            layout.addWidget(body_label, alignment=Qt.AlignCenter)
+
+
+def divider() -> QFrame:
+    line = QFrame()
+    line.setProperty("role", "divider")
+    line.setFixedHeight(1)
+    return line
+
+
 class Screen(QWidget):
     """Base for every screen: title, optional subtitle, scrollable content.
 
     Content scrolls vertically so a small window never clips a card, and never
-    scrolls horizontally — the spec forbids the body scrolling sideways.
+    scrolls horizontally, which the spec forbids for the page body.
     """
 
     def __init__(self, heading: str, description: str = "") -> None:
@@ -91,12 +142,15 @@ class Screen(QWidget):
         scroll.setWidget(body)
 
         self.root = QVBoxLayout(body)
-        self.root.setContentsMargins(Space.xxl, Space.xl, Space.xxl, Space.xl)
+        self.root.setContentsMargins(Space.xxl, Space.xl, Space.xxl, Space.xxl)
         self.root.setSpacing(Space.lg)
 
-        self.root.addWidget(title(heading))
+        header = QVBoxLayout()
+        header.setSpacing(Space.xs)
+        header.addWidget(title(heading))
         if description:
-            self.root.addWidget(subtitle(description))
+            header.addWidget(subtitle(description))
+        self.root.addLayout(header)
 
     def add(self, widget: QWidget, stretch: int = 0) -> QWidget:
         self.root.addWidget(widget, stretch)

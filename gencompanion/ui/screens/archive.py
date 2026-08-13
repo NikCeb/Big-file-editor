@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
     QWidget,
@@ -20,7 +22,7 @@ from PySide6.QtWidgets import (
 
 from ...formats.big import ArchiveError, BigArchive, open_archive
 from ..tokens import Space
-from ..widgets import Banner, Screen, human_size, section
+from ..widgets import Banner, EmptyState, Screen, human_size
 
 _COLUMNS = ("Name", "Size", "Offset", "Type")
 
@@ -35,22 +37,26 @@ class ArchiveScreen(Screen):
 
         self.add(self._toolbar())
 
-        self.status = Banner("No archive open.", "info")
+        self.status = Banner("", "info")
+        self.status.hide()
         self.add(self.status)
 
-        self.table = QTableWidget(0, len(_COLUMNS))
-        self.table.setHorizontalHeaderLabels(_COLUMNS)
-        self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setSortingEnabled(True)
-        self.table.verticalHeader().setVisible(False)
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        for col in range(1, len(_COLUMNS)):
-            header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
-        self.table.setMinimumHeight(360)
-        self.add(self.table, stretch=1)
+        # Swap between the empty state and the table rather than showing an
+        # empty grid, which reads as a fault.
+        self.content = QStackedWidget()
+        self.content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+
+        self.empty = EmptyState(
+            "No archive open",
+            "Open a .big file from your Generals folder to list its contents. "
+            "Archives are read lazily, so even multi-gigabyte files open "
+            "instantly.",
+        )
+        self.table = self._make_table()
+
+        self.content.addWidget(self.empty)
+        self.content.addWidget(self.table)
+        self.add(self.content)
 
     def _toolbar(self) -> QWidget:
         bar = QWidget()
@@ -66,6 +72,7 @@ class ArchiveScreen(Screen):
         self.filter_box.setPlaceholderText("Filter by name or extension")
         self.filter_box.textChanged.connect(self._apply_filter)
         self.filter_box.setClearButtonEnabled(True)
+        self.filter_box.setEnabled(False)
 
         self.extract_button = QPushButton("Extract selected")
         self.extract_button.clicked.connect(self._extract_selected)
@@ -75,6 +82,25 @@ class ArchiveScreen(Screen):
         layout.addWidget(self.filter_box, 1)
         layout.addWidget(self.extract_button)
         return bar
+
+    def _make_table(self) -> QTableWidget:
+        table = QTableWidget(0, len(_COLUMNS))
+        table.setHorizontalHeaderLabels(_COLUMNS)
+        table.setAlternatingRowColors(True)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.setSortingEnabled(True)
+        table.setShowGrid(False)
+        table.verticalHeader().setVisible(False)
+        table.verticalHeader().setDefaultSectionSize(30)
+        table.setMinimumHeight(360)
+
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        for col in range(1, len(_COLUMNS)):
+            header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
+        return table
 
     # -- actions -------------------------------------------------------
 
@@ -89,28 +115,42 @@ class ArchiveScreen(Screen):
         try:
             archive = open_archive(path)
         except ArchiveError as exc:
-            self.status.setProperty("role", "banner-error")
-            self.status.setStyleSheet("")
-            self.status.set_text(f"{path.name} — {exc}")
+            self._fail(f"{path.name} - {exc}")
             return
         except OSError as exc:
-            self.status.set_text(f"{path.name} — could not read: {exc}")
+            self._fail(f"{path.name} - could not read: {exc}")
             return
 
         self.archive = archive
         self._populate()
+        self.content.setCurrentWidget(self.table)
 
         message = (
-            f"{path.name} — {len(archive):,} entries, "
+            f"{path.name}   {len(archive):,} entries, "
             f"{human_size(archive.total_data_size())}"
         )
+        kind = "info"
         if archive.warnings:
-            message += f"  ·  {len(archive.warnings)} warning(s): "
-            message += "; ".join(archive.warnings[:3])
+            message += f"   -   {len(archive.warnings)} warning(s): "
+            message += "; ".join(archive.warnings[:2])
+            kind = "warn"
         if archive.read_only:
-            message += "  ·  read-only (archive is damaged)"
+            message += "   -   read-only, this archive is damaged"
+            kind = "warn"
+
+        self.status.set_kind(kind)
         self.status.set_text(message)
+        self.status.show()
         self.extract_button.setEnabled(True)
+        self.filter_box.setEnabled(True)
+
+    def _fail(self, message: str) -> None:
+        self.status.set_kind("error")
+        self.status.set_text(message)
+        self.status.show()
+        self.content.setCurrentWidget(self.empty)
+        self.extract_button.setEnabled(False)
+        self.filter_box.setEnabled(False)
 
     def _populate(self) -> None:
         if self.archive is None:
@@ -125,13 +165,14 @@ class ArchiveScreen(Screen):
 
             size = QTableWidgetItem()
             size.setData(Qt.DisplayRole, entry.size)
+            size.setText(human_size(entry.size))
             size.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             offset = QTableWidgetItem()
             offset.setData(Qt.DisplayRole, entry.offset)
             offset.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
-            kind = QTableWidgetItem(entry.extension or "—")
+            kind = QTableWidgetItem(entry.extension or "-")
 
             self.table.setItem(row, 0, name)
             self.table.setItem(row, 1, size)
@@ -142,10 +183,20 @@ class ArchiveScreen(Screen):
 
     def _apply_filter(self, text: str) -> None:
         needle = text.strip().casefold()
+        shown = 0
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
-            visible = not needle or (item is not None and needle in item.text().casefold())
+            visible = not needle or (
+                item is not None and needle in item.text().casefold()
+            )
             self.table.setRowHidden(row, not visible)
+            shown += int(visible)
+
+        if needle and self.archive is not None:
+            self.status.set_text(
+                f"{shown:,} of {len(self.archive):,} entries match "
+                f"'{text.strip()}'"
+            )
 
     def _extract_selected(self) -> None:
         if self.archive is None:
@@ -190,4 +241,5 @@ class ArchiveScreen(Screen):
                 f"Extracted {written}.\n\nFailed:\n" + "\n".join(failed[:10]),
             )
         else:
+            self.status.set_kind("info")
             self.status.set_text(f"Extracted {written} entries to {dest_path}")

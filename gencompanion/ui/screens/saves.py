@@ -15,10 +15,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
+    QHBoxLayout,
     QHeaderView,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
+    QWidget,
 )
 
 from ...domain.detect import GameInstall
@@ -44,9 +46,16 @@ class SavesScreen(Screen):
         self.status = Banner("", "info")
         self.add(self.status)
 
+        # Secondary action: keep it to its own width rather than spanning
+        # the page like a primary call to action.
+        bar = QWidget()
+        bar_layout = QHBoxLayout(bar)
+        bar_layout.setContentsMargins(0, 0, 0, 0)
         self.browse_button = QPushButton("Browse another folder…")
         self.browse_button.clicked.connect(self._browse)
-        self.add(self.browse_button)
+        bar_layout.addWidget(self.browse_button)
+        bar_layout.addStretch(1)
+        self.add(bar)
 
         self.table = self._make_table()
         self.table.setMinimumHeight(420)
@@ -72,10 +81,13 @@ class SavesScreen(Screen):
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.setSortingEnabled(True)
+        table.setShowGrid(False)
         table.verticalHeader().setVisible(False)
+        table.verticalHeader().setDefaultSectionSize(30)
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         for col in (0, 1, 3, 4, 5):
             header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
         return table

@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
     QWidget,
@@ -16,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from ...safety.backup import Journal, restore, restore_to_stock
 from ..tokens import Space
-from ..widgets import Banner, Screen, human_size
+from ..widgets import Banner, EmptyState, Screen, human_size
 
 _COLUMNS = ("When", "File", "Reason", "Size", "Kind")
 
@@ -30,25 +32,49 @@ class BackupsScreen(Screen):
         self.journal = Journal.load()
 
         self.status = Banner("", "info")
+        self.status.hide()
         self.add(self.status)
-        self.add(self._actions())
 
-        self.table = QTableWidget(0, len(_COLUMNS))
-        self.table.setHorizontalHeaderLabels(_COLUMNS)
-        self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.verticalHeader().setVisible(False)
+        self.content = QStackedWidget()
+        self.content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
 
-        header = self.table.horizontalHeader()
+        self.empty = EmptyState(
+            "No backups yet",
+            "A copy is taken automatically before this app changes any file. "
+            "Restoring only ever affects files it wrote, so anything you "
+            "edited yourself is left alone.",
+        )
+        self.table = self._make_table()
+
+        self.content.addWidget(self.empty)
+        self.content.addWidget(self.table)
+        self.add(self.content)
+
+        # Actions sit below the data they act on.
+        self.actions = self._actions()
+        self.add(self.actions)
+        self.add_stretch()
+
+        self._reload()
+
+    def _make_table(self) -> QTableWidget:
+        table = QTableWidget(0, len(_COLUMNS))
+        table.setHorizontalHeaderLabels(_COLUMNS)
+        table.setAlternatingRowColors(True)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.setShowGrid(False)
+        table.verticalHeader().setVisible(False)
+        table.verticalHeader().setDefaultSectionSize(30)
+        table.setMinimumHeight(360)
+
+        header = table.horizontalHeader()
         header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         for col in (0, 1, 3, 4):
             header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
-
-        self.table.setMinimumHeight(360)
-        self.add(self.table, stretch=1)
-        self._reload()
+        return table
 
     def _actions(self) -> QWidget:
         row = QWidget()
@@ -64,8 +90,8 @@ class BackupsScreen(Screen):
         self.stock_button.clicked.connect(self._restore_stock)
 
         layout.addWidget(self.restore_button)
-        layout.addWidget(self.stock_button)
         layout.addStretch(1)
+        layout.addWidget(self.stock_button)
         return row
 
     def _reload(self) -> None:
@@ -75,7 +101,7 @@ class BackupsScreen(Screen):
         self.table.setRowCount(len(entries))
         for row, entry in enumerate(entries):
             self.table.setItem(
-                row, 0, QTableWidgetItem(entry.when.strftime("%Y-%m-%d %H:%M:%S"))
+                row, 0, QTableWidgetItem(entry.when.strftime("%Y-%m-%d  %H:%M:%S"))
             )
 
             name_item = QTableWidgetItem(entry.target_path.name)
@@ -100,16 +126,19 @@ class BackupsScreen(Screen):
         has_any = bool(entries)
         self.restore_button.setEnabled(has_any)
         self.stock_button.setEnabled(has_any)
+        self.actions.setVisible(has_any)
 
         if has_any:
+            self.content.setCurrentWidget(self.table)
+            self.status.set_kind("info")
             self.status.set_text(
-                f"{len(entries)} restorable backups. "
-                "Restoring only affects files this app changed."
+                f"{len(entries)} restorable backups across "
+                f"{len(self.journal.targets())} files."
             )
+            self.status.show()
         else:
-            self.status.set_text(
-                "No backups yet. One is taken automatically before any change."
-            )
+            self.content.setCurrentWidget(self.empty)
+            self.status.hide()
 
     def _selected_entry(self):
         rows = {i.row() for i in self.table.selectedIndexes()}
@@ -146,8 +175,9 @@ class BackupsScreen(Screen):
             QMessageBox.warning(self, "Could not restore", str(exc))
             return
 
-        self.status.set_text(f"Restored {entry.target_path.name}")
         self._reload()
+        self.status.set_text(f"Restored {entry.target_path.name}")
+        self.status.show()
 
     def _restore_stock(self) -> None:
         targets = self.journal.targets()
@@ -171,5 +201,6 @@ class BackupsScreen(Screen):
             return
 
         restored = restore_to_stock(self.journal)
-        self.status.set_text(f"Restored {len(restored)} files to stock.")
         self._reload()
+        self.status.set_text(f"Restored {len(restored)} files to stock.")
+        self.status.show()

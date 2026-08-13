@@ -59,6 +59,9 @@ class GameInstall:
     user_data_path: Path | None = None
     executable: Path | None = None
     big_files: list[Path] = field(default_factory=list)
+    #: True when the path came from a user override rather than detection.
+    manual_install: bool = False
+    manual_user_data: bool = False
 
     @property
     def options_ini(self) -> Path | None:
@@ -141,19 +144,93 @@ def _find_install_dir(edition: Edition) -> tuple[Path | None, Path | None]:
     return None, None
 
 
+def _documents_roots() -> list[Path]:
+    r"""Every plausible Documents location.
+
+    Documents is not reliably ~/Documents. OneDrive redirection is common, and
+    the shell folder can be moved anywhere, so check the registry first and
+    fall back to the usual spots.
+    """
+    roots: list[Path] = []
+    home = Path(os.path.expanduser("~"))
+
+    # Authoritative: the shell's own Personal folder.
+    try:
+        import winreg
+
+        key_path = (
+            r"Software\Microsoft\Windows\CurrentVersion"
+            r"\Explorer\User Shell Folders"
+        )
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path) as key:
+            value, _ = winreg.QueryValueEx(key, "Personal")
+            expanded = os.path.expandvars(value)
+            if expanded:
+                roots.append(Path(expanded))
+    except (ImportError, OSError):
+        pass
+
+    roots.append(home / "Documents")
+
+    # OneDrive redirection, including business tenants (OneDrive - Contoso).
+    onedrive = os.environ.get("OneDrive") or os.environ.get("OneDriveConsumer")
+    if onedrive:
+        roots.append(Path(onedrive) / "Documents")
+    for child in home.glob("OneDrive*"):
+        if child.is_dir():
+            roots.append(child / "Documents")
+
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for root in roots:
+        resolved = Path(os.path.normpath(str(root)))
+        if resolved not in seen:
+            seen.add(resolved)
+            unique.append(resolved)
+    return unique
+
+
 def _find_user_data(edition: Edition) -> Path | None:
-    documents = Path(os.path.expanduser("~")) / "Documents"
-    candidate = documents / _USER_DATA_DIRS[edition]
-    return candidate if candidate.is_dir() else None
+    for documents in _documents_roots():
+        candidate = documents / _USER_DATA_DIRS[edition]
+        if candidate.is_dir():
+            return candidate
+    return None
 
 
-def detect_installs() -> list[GameInstall]:
-    """Find every Generals edition present on this machine."""
+def detect_installs(overrides: object | None = None) -> list[GameInstall]:
+    """Find every Generals edition present on this machine.
+
+    `overrides` is an optional domain.settings.Overrides. A user-chosen path
+    always wins: if someone picked a folder, we do not second-guess it.
+    """
     installs: list[GameInstall] = []
 
     for edition in ("zerohour", "generals"):
         install_dir, executable = _find_install_dir(edition)
         user_data = _find_user_data(edition)
+
+        manual_install = False
+        manual_user_data = False
+
+        if overrides is not None:
+            chosen_install = overrides.install_for(edition)  # type: ignore[attr-defined]
+            if chosen_install is not None and chosen_install.is_dir():
+                install_dir = chosen_install
+                manual_install = True
+                executable = next(
+                    (
+                        chosen_install / name
+                        for name in _EXE_NAMES[edition]
+                        if (chosen_install / name).exists()
+                    ),
+                    None,
+                )
+
+            chosen_data = overrides.user_data_for(edition)  # type: ignore[attr-defined]
+            if chosen_data is not None and chosen_data.is_dir():
+                user_data = chosen_data
+                manual_user_data = True
 
         if install_dir is None and user_data is None:
             continue
@@ -166,6 +243,8 @@ def detect_installs() -> list[GameInstall]:
             GameInstall(
                 edition=edition,
                 label=_LABELS[edition],
+                manual_install=manual_install,
+                manual_user_data=manual_user_data,
                 install_path=install_dir,
                 user_data_path=user_data,
                 executable=executable,

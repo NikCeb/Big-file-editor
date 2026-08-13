@@ -2,14 +2,21 @@
 
 Nothing on this screen writes to a save file. There is no edit control and no
 code path that opens a save for writing.
+
+A folder can also be browsed directly, so saves copied from another machine
+can be inspected without configuring anything.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFileDialog,
     QHeaderView,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
 )
@@ -28,44 +35,65 @@ class SavesScreen(Screen):
             "Read-only. This tool never modifies save files.",
         )
 
-        save_dirs = [
+        self._save_dirs: list[tuple[str, Path]] = [
             (install.label, install.save_dir)
             for install in installs
             if install.save_dir is not None
         ]
 
-        if not save_dirs:
-            self.add(Banner("No save folders found.", "warn"))
-            self.add_stretch()
-            return
+        self.status = Banner("", "info")
+        self.add(self.status)
 
-        self.table = QTableWidget(0, len(_COLUMNS))
-        self.table.setHorizontalHeaderLabels(_COLUMNS)
-        self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setSortingEnabled(True)
-        self.table.verticalHeader().setVisible(False)
+        self.browse_button = QPushButton("Browse another folder…")
+        self.browse_button.clicked.connect(self._browse)
+        self.add(self.browse_button)
 
-        header = self.table.horizontalHeader()
+        self.table = self._make_table()
+        self.table.setMinimumHeight(420)
+        self.add(self.table, stretch=1)
+
+        if self._save_dirs:
+            self._reload()
+        else:
+            self.browse_button.setText("Browse a save folder…")
+            self.browse_button.setProperty("variant", "primary")
+            self.status.setProperty("role", "banner-warn")
+            self.status.set_text(
+                "No save folders found. Use Overview to locate your save and "
+                "config folder, or browse a folder directly."
+            )
+
+    # -- table ---------------------------------------------------------
+
+    def _make_table(self) -> QTableWidget:
+        table = QTableWidget(0, len(_COLUMNS))
+        table.setHorizontalHeaderLabels(_COLUMNS)
+        table.setAlternatingRowColors(True)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.setSortingEnabled(True)
+        table.verticalHeader().setVisible(False)
+
+        header = table.horizontalHeader()
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         for col in (0, 1, 3, 4, 5):
             header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
+        return table
 
-        total = 0
+    def _reload(self) -> None:
+        rows = []
         problems = 0
-        rows: list[tuple[str, object]] = []
 
-        for _label, save_dir in save_dirs:
+        for _label, save_dir in self._save_dirs:
             for info in list_saves(save_dir):
-                rows.append((_label, info))
-                total += 1
+                rows.append(info)
                 if not info.valid:
                     problems += 1
 
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(rows))
-        for row, (_label, info) in enumerate(rows):
+
+        for row, info in enumerate(rows):
             self.table.setItem(row, 0, QTableWidgetItem(info.filename))
             self.table.setItem(row, 1, QTableWidgetItem(info.kind))
             self.table.setItem(row, 2, QTableWidgetItem(info.display_name))
@@ -82,11 +110,29 @@ class SavesScreen(Screen):
                 5,
                 QTableWidgetItem(info.timestamp.strftime("%Y-%m-%d %H:%M")),
             )
+
         self.table.setSortingEnabled(True)
 
-        summary = f"{total} saves"
+        summary = f"{len(rows)} saves"
+        if len(self._save_dirs) > 1:
+            summary += f" across {len(self._save_dirs)} folders"
         if problems:
             summary += f"  ·  {problems} unreadable"
-        self.add(Banner(summary, "warn" if problems else "info"))
-        self.table.setMinimumHeight(420)
-        self.add(self.table, stretch=1)
+        self.status.set_text(summary)
+
+    def _browse(self) -> None:
+        chosen = QFileDialog.getExistingDirectory(
+            self, "Select a folder containing .sav files"
+        )
+        if not chosen:
+            return
+
+        path = Path(chosen)
+        found = list_saves(path)
+        if not found:
+            self.status.set_text(f"No .sav files found in {path}")
+            return
+
+        self._save_dirs = [(path.name, path)]
+        self.browse_button.setText("Browse another folder…")
+        self._reload()

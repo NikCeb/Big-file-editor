@@ -7,7 +7,9 @@
 | [SPEC.md](SPEC.md) | What was built and the decisions behind it, including where the build diverged from the original plan. |
 | [PLAN.md](PLAN.md) | The layered build order, kept as a record of the reasoning. |
 
-`images/` holds the screenshots used by the README and tutorial.
+`images/` holds the screenshots used by the README and tutorial. Regenerate
+them after a UI change with `python tools/capture_docs.py` from the repo root,
+so the documentation never drifts from the app.
 
 ## Reading order
 

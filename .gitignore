@@ -8,14 +8,16 @@ __pycache__/
 .venv/
 venv/
 
-# PyInstaller output
+# PyInstaller output. The executable is a build artifact; rebuild it with
+# `pyinstaller GeneralsCompanion.spec --noconfirm`.
 build/
 dist/
 *.manifest
 
-# Local diagnostics and generated screenshots
+# Scratch output from local probes. Documentation screenshots live in
+# docs/images/ and ARE tracked.
 tests/local/screenshots/
-dbg_*.txt
+tests/local/output/
 *.log
 
 # Editor / OS

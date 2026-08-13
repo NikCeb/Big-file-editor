@@ -1,0 +1,29 @@
+[project]
+name = "generals-companion"
+version = "0.1.0"
+description = "Quality-of-life tooling and BIG archive editor for C&C Generals and Zero Hour"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+
+dependencies = [
+    "PySide6>=6.6",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pyinstaller>=6.0",
+]
+
+[project.gui-scripts]
+generals-companion = "gencompanion.app:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# tests/local holds opt-in probes that need a real game installation.
+addopts = "--ignore=tests/local"
+
+[tool.setuptools.packages.find]
+include = ["gencompanion*"]

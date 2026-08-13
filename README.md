@@ -123,6 +123,8 @@ written back out.
 
 ## Backups
 
+![Backups screen](docs/images/backups.png)
+
 Every write is backed up first, and recorded in a journal.
 
 The journal matters more than the backup folder. On restore, scanning a directory
@@ -157,11 +159,37 @@ The rule behind all of it: **fix the machine's assumptions, not the game's rules
 | GenTool | Not tested; GenTool already handles some display work |
 | Generals Online re-release | Not tested |
 
+## Project structure
+
+```
+gencompanion/
+  formats/       File format parsers. Pure stdlib, no OS calls, no Qt.
+    big/           BIG archive reader and writer
+    save/          Save file identification (read-only)
+    ini/           Order- and comment-preserving INI parser
+  domain/        Business logic. Never imports Qt.
+                   install detection, launch options, display settings
+  safety/        Backup, change journal, restore. Every write goes through here.
+  ui/            PySide6 interface
+    tokens.py      The only place colour, spacing and type live
+    screens/       One module per screen
+
+docs/            Documentation and screenshots
+tests/           Test suite and fixtures
+  local/           Opt-in probes that need a real game installation
+tools/           Development scripts
+main.py          Entry point
+```
+
+The dependency direction is one-way: `ui` imports `domain`, `domain` imports
+`formats` and `safety`, and `formats` imports nothing from the project. That is
+what keeps the core testable without a display.
+
 ## Building from source
 
 ```
 python -m venv .venv
-.venv\Scripts\pip install PySide6 pyinstaller psutil
+.venv\Scripts\pip install -e ".[dev]"
 .venv\Scripts\python main.py
 ```
 
@@ -173,7 +201,16 @@ To produce the executable:
 
 Output lands in `dist\GeneralsCompanion.exe`.
 
-## Licence and attribution
+To regenerate the documentation screenshots after a UI change:
+
+```
+.venv\Scripts\python tools\capture_docs.py
+```
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
 
 Command & Conquer: Generals is a trademark of Electronic Arts. This is an
-unofficial community tool and ships no game assets.
+unofficial community tool, not affiliated with or endorsed by EA, and it ships
+no game assets.

@@ -53,8 +53,6 @@ Settings and backups live in:
 
 Full walkthrough: **[docs/TUTORIAL.md](docs/TUTORIAL.md)**
 
-Why it works the way it does: **[docs/FINDINGS.md](docs/FINDINGS.md)**
-
 ---
 
 ## Display
@@ -175,9 +173,6 @@ gencompanion/
     screens/       One module per screen
 
 docs/            Documentation and screenshots
-tests/           Test suite and fixtures
-  local/           Opt-in probes that need a real game installation
-tools/           Development scripts
 main.py          Entry point
 ```
 
@@ -189,7 +184,7 @@ what keeps the core testable without a display.
 
 ```
 python -m venv .venv
-.venv\Scripts\pip install -e ".[dev]"
+.venv\Scripts\pip install -e .
 .venv\Scripts\python main.py
 ```
 
@@ -200,12 +195,6 @@ To produce the executable:
 ```
 
 Output lands in `dist\GeneralsCompanion.exe`.
-
-To regenerate the documentation screenshots after a UI change:
-
-```
-.venv\Scripts\python tools\capture_docs.py
-```
 
 ## Licence
 

@@ -12,18 +12,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
+build = [
     "pyinstaller>=6.0",
 ]
 
 [project.gui-scripts]
 generals-companion = "gencompanion.app:main"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-# tests/local holds opt-in probes that need a real game installation.
-addopts = "--ignore=tests/local"
 
 [tool.setuptools.packages.find]
 include = ["gencompanion*"]

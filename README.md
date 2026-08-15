@@ -1,78 +1,205 @@
-# Big File Editor
+# Generals Companion
 
-## 🚀 Overview
+A quality-of-life tool and archive editor for **Command & Conquer: Generals** and
+**Zero Hour**.
 
-Big File Editor is a high-performance tool designed for handling and editing large files efficiently.
+The game is from 2003. It assumes a 4:3 monitor, a single-core CPU, and a machine
+that no longer exists. This tool fixes those assumptions by editing the config
+files the game already reads — and backs up everything before it does.
 
-This tool is also designed for modifying **.BIG file configurations** in classic **EA games**, such as _Command & Conquer Generals_, to support **higher resolutions and widescreen displays**. It allows users to adjust game settings stored in **.BIG files**, ensuring better compatibility with modern screens for an improved gaming experience.
+It never patches an executable. It never writes to a save file. It changes
+nothing that affects another player.
 
-## 🔥 Features
-
-- **Efficient Handling of Large Files** - Process and edit large files without crashes.
-- **User-Friendly UI** - A clean and intuitive interface for seamless file editing.
-- **Modify .BIG Files for EA Games** - Adjust settings in classic games like _Command & Conquer Generals_ to enhance resolution and display settings.
-
-## 🛠️ Technologies Used
-
-- **GUI:** Tkinter
-- **Logic:** Python
-
-## 📦 Installation & Setup
-
-To run the project locally:
-
-```sh
-# Clone the repository
-git clone https://github.com/yourusername/big-file-editor.git
-cd big-file-editor
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Run the application
-python main.py
-```
-
-## 🎯 Usage
-
-1. **Upload or Open a Large File**
-2. **Make Edits Using the UI**
-3. **Save Changes Locally**
-4. **Export the Edited File**
-5. **Modify .BIG Files for Game Enhancements**
-
-## 📌 SEO Keywords
-
-- Big File Editor
-- Large File Processing
-- Tkinter File Editor
-- Python Large File Handling
-- Modify .BIG Files in EA Games
-- Command & Conquer Generals Widescreen Fix
-- Edit Game Configuration Files
-
-## 🛡️ Security & Performance
-
-- **Optimized File Handling** - Uses efficient processing techniques.
-- **Data Privacy** - No files are uploaded to external servers.
-
-## 🤝 Contributing
-
-We welcome contributions! To contribute:
-
-1. Fork the repository
-2. Create a new branch (`feature/improvement`)
-3. Commit your changes (`feat: Added new feature`)
-4. Submit a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 📧 Contact & Support
-
-For support or inquiries, please [create an issue on GitHub](https://github.com/yourusername/big-file-editor/issues).
+![Overview screen](docs/images/overview.png)
 
 ---
 
-**Big File Editor** - The ultimate solution for handling and editing large files efficiently!
+## What it does
+
+| Screen | What it is for |
+|---|---|
+| **Overview** | Detected installs, config paths and save counts. Every path is correctable. |
+| **Display** | Resolution and detail settings from `Options.ini`, including modes the in-game menu never offers. |
+| **Launch options** | Command-line switches with a live preview, copy to clipboard, and launch. |
+| **Saves** | Read-only browser. Identifies campaign, challenge and progress saves. |
+| **Archive** | Open, browse and extract `.big` archives. |
+| **Backups** | Every file the tool changed, with one-click restore. |
+
+## Requirements
+
+- Windows 10 or 11
+- Command & Conquer: Generals or Zero Hour installed (or just its save folder)
+
+No Python install needed. The release is a single `.exe`.
+
+## Install
+
+Download `GeneralsCompanion.exe` and run it. That is the whole install — it is
+self-contained and writes nothing until you press Apply on a screen.
+
+Settings and backups live in:
+
+```
+%LOCALAPPDATA%\GeneralsCompanion\
+```
+
+## Quick start
+
+1. **Open the app.** It looks for your installation automatically. If a path shows
+   *not found*, press **Locate...** and pick the folder yourself.
+2. **Go to Display.** Set your monitor's real resolution and press **Apply changes**.
+3. **Go to Launch options.** Tick *Skip intro movies and shell map*, then
+   **Copy command line** or **Launch game**.
+
+Full walkthrough: **[docs/TUTORIAL.md](docs/TUTORIAL.md)**
+
+---
+
+## Display
+
+Reads and writes `Options.ini`. The in-game menu offers a short list of 4:3 modes,
+but the config file accepts anything — which is how a 2003 game ends up running
+at 2560×1440.
+
+![Display screen](docs/images/display.png)
+
+Settings that are absent from your `Options.ini` show **(game default)** and are
+only written if you change them. Your file only contains keys you have actually
+touched, so absence means default, not unsupported.
+
+## Launch options
+
+Command-line switches, applied at launch. These write nothing to disk, so they are
+undone by simply launching without them.
+
+![Launch options screen](docs/images/launch-options.png)
+
+| Switch | Effect |
+|---|---|
+| `-quickstart` | Skips intro movies and the menu background battle. The best one. |
+| `-noshellmap` | Keeps intros, drops the animated menu backdrop. |
+| `-nologo` | Skips the EA logo. |
+| `-win` | Runs in a window. |
+| `-noshaders` | Legacy compatibility for old ATI hardware. |
+| `-xres` / `-yres` | Sets resolution without touching `Options.ini`. |
+| `-nofpslimit` | Lifts the 30 FPS cap. **Read the warning below.** |
+
+### About the FPS cap
+
+`-nofpslimit` does remove the 30 FPS limit. It also makes the game run at roughly
+**double speed**, because the engine ties simulation speed to framerate. Units move
+faster, buildings finish sooner, animations run fast.
+
+This is not a smoothness fix, and the tool says so the moment you tick it. If you
+want high FPS at correct game speed, use [GenTool](https://www.gentool.net/), which
+caps frames independently of game logic.
+
+## Saves
+
+A read-only browser. It identifies each save's mission, faction and map, separates
+full saves from small campaign-progress markers, and flags anything unreadable.
+
+![Saves screen](docs/images/saves.png)
+
+**This tool never writes to a save file.** There is no edit control and no code path
+that opens one for writing. Editing save values is a trainer; this is not that.
+
+You can also browse any folder directly, which is useful for saves copied from
+another machine.
+
+## Archive
+
+Opens `.big` archives — the format Generals uses for its assets. Browse entries,
+filter by name or extension, and extract single files or whole selections.
+
+![Archive screen](docs/images/archive.png)
+
+Entries are read lazily, so a multi-gigabyte archive lists instantly and extracting
+one file reads only that file. Damaged archives still open: bad entries are skipped
+with a warning and the archive is marked read-only so the damage can never be
+written back out.
+
+## Backups
+
+![Backups screen](docs/images/backups.png)
+
+Every write is backed up first, and recorded in a journal.
+
+The journal matters more than the backup folder. On restore, scanning a directory
+cannot tell a file *this tool* changed from one *you* hand-edited — and restoring
+over the latter would destroy your work. So only journalled files are ever touched.
+
+**Unrecorded means untouched.**
+
+- **Restore selected** puts one file back to a chosen point.
+- **Restore everything to stock** returns every file to how it was before this tool
+  first ran — not the previous change, the original state.
+
+Backups are capped at 50, and the first-run baseline is never evicted.
+
+---
+
+## What it will not do
+
+- Patch `generals.exe`, `game.dat` or any executable
+- Write to a save file
+- Change unit stats, costs, money or tech level
+- Anything affecting multiplayer fairness
+
+The rule behind all of it: **fix the machine's assumptions, not the game's rules.**
+
+## Compatibility
+
+| Target | Status |
+|---|---|
+| Zero Hour 1.04 | Verified |
+| Generals 1.08 | Supported |
+| GenTool | Not tested; GenTool already handles some display work |
+| Generals Online re-release | Not tested |
+
+## Project structure
+
+```
+gencompanion/
+  formats/       File format parsers. Pure stdlib, no OS calls, no Qt.
+    big/           BIG archive reader and writer
+    save/          Save file identification (read-only)
+    ini/           Order- and comment-preserving INI parser
+  domain/        Business logic. Never imports Qt.
+                   install detection, launch options, display settings
+  safety/        Backup, change journal, restore. Every write goes through here.
+  ui/            PySide6 interface
+    tokens.py      The only place colour, spacing and type live
+    screens/       One module per screen
+
+docs/            Documentation and screenshots
+main.py          Entry point
+```
+
+The dependency direction is one-way: `ui` imports `domain`, `domain` imports
+`formats` and `safety`, and `formats` imports nothing from the project. That is
+what keeps the core testable without a display.
+
+## Building from source
+
+```
+python -m venv .venv
+.venv\Scripts\pip install -e .
+.venv\Scripts\python main.py
+```
+
+To produce the executable:
+
+```
+.venv\Scripts\pyinstaller GeneralsCompanion.spec --noconfirm
+```
+
+Output lands in `dist\GeneralsCompanion.exe`.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
+
+Command & Conquer: Generals is a trademark of Electronic Arts. This is an
+unofficial community tool, not affiliated with or endorsed by EA, and it ships
+no game assets.

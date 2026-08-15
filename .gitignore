@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# PyInstaller output. The executable is a build artifact; rebuild it with
+# `pyinstaller GeneralsCompanion.spec --noconfirm`.
+build/
+dist/
+*.manifest
+
+# Scratch output from local probes. Documentation screenshots live in
+# docs/images/ and ARE tracked.
+tests/local/screenshots/
+tests/local/output/
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
